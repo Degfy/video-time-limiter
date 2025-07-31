@@ -1,0 +1,16 @@
+# default config file
+
+app:
+  name: root-app
+  env: dev
+
+db:
+  file: data/db.json
+  save-duration: 10s
+
+setting:
+  limit-time: 3600000
+
+
+server:
+  health-check: /api/health-check

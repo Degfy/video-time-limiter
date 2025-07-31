@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频时长限制器 - 测试页面</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .video-container {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        video {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+        
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #5a6fd8;
+        }
+        
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        
+        .status {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎥 视频时长限制器测试页面</h1>
+        
+        <div class="info">
+            <strong>使用说明：</strong>
+            <ol>
+                <li>确保已安装视频时长限制器扩展</li>
+                <li>点击扩展图标进行设置（建议设置较短的时间限制，如30秒，便于测试）</li>
+                <li>播放下面的视频，观察扩展是否正常工作</li>
+                <li>当观看时间超过限制时，应该会弹出提示框</li>
+            </ol>
+        </div>
+        
+        <div class="warning">
+            <strong>注意：</strong>为了快速测试效果，建议在扩展设置中将时间限制设为30秒或1分钟。
+        </div>
+        
+        <div class="video-container">
+            <h3>测试视频 1 - HTML5 视频</h3>
+            <video id="video1" controls width="400">
+                <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+                <source src="https://www.w3schools.com/html/mov_bbb.ogg" type="video/ogg">
+                您的浏览器不支持视频标签。
+            </video>
+        </div>
+        
+        <div class="video-container">
+            <h3>测试视频 2 - 本地视频（如果有的话）</h3>
+            <video id="video2" controls width="400">
+                <source src="test-video.mp4" type="video/mp4">
+                本地测试视频（如果存在）
+            </video>
+        </div>
+        
+        <div class="controls">
+            <button onclick="playVideo('video1')">播放视频1</button>
+            <button onclick="pauseVideo('video1')">暂停视频1</button>
+            <button onclick="playVideo('video2')">播放视频2</button>
+            <button onclick="pauseVideo('video2')">暂停视频2</button>
+        </div>
+        
+        <div class="controls">
+            <button onclick="simulateWatching()">模拟长时间观看</button>
+            <button onclick="checkExtensionStatus()">检查扩展状态</button>
+        </div>
+        
+        <div class="status" id="status">
+            状态：等待测试...
+        </div>
+        
+        <div class="info">
+            <h3>测试检查项：</h3>
+            <ul>
+                <li>✅ 视频播放时是否开始计时</li>
+                <li>✅ 视频暂停时是否停止计时</li>
+                <li>✅ 切换标签页时是否暂停计时</li>
+                <li>✅ 超过时间限制时是否弹出警告</li>
+                <li>✅ 警告关闭后继续播放是否再次提醒</li>
+                <li>✅ 扩展设置界面是否正常工作</li>
+                <li>🆕 服务器状态检查功能是否正常</li>
+                <li>🆕 用户ID编辑功能是否正常</li>
+                <li>🆕 自定义用户ID保存是否成功</li>
+                <li>🆕 本地/远程模式切换是否正常</li>
+                <li>🆕 本地模式下是否隐藏服务器配置</li>
+                <li>🆕 远程模式下是否显示服务器配置</li>
+                <li>🆕 服务器状态显示：远程模式下实时显示服务器连接状态</li>
+                <li>🆕 自定义提示同步：远程模式下自定义提示内容同步到服务器</li>
+            </ul>
+        </div>
+        
+        <div class="info">
+            <h3>🆕 新功能测试：</h3>
+            <ol>
+                <li><strong>服务器状态检查：</strong>
+                    <ul>
+                        <li>在设置中输入服务器地址（如：http://localhost:8080）</li>
+                        <li>点击"检查"按钮测试服务器连接状态</li>
+                        <li>观察状态显示：在线(绿色)、离线(红色)、部分可用(黄色)</li>
+                    </ul>
+                </li>
+                <li><strong>用户ID设置：</strong>
+                     <ul>
+                         <li>点击"编辑"按钮进入用户ID编辑模式</li>
+                         <li>输入自定义用户ID并按回车或点击其他地方保存</li>
+                         <li>验证用户ID是否成功更新</li>
+                         <li>测试"取消"功能是否正常</li>
+                     </ul>
+                 </li>
+                 <li><strong>模式切换：</strong>
+                     <ul>
+                         <li>测试"本地模式"和"远程模式"按钮切换</li>
+                         <li>验证本地模式下服务器配置区域是否隐藏</li>
+                         <li>验证远程模式下服务器配置区域是否显示</li>
+                         <li>测试切换到远程模式时是否自动填入示例服务器地址</li>
+                         <li>测试切换到本地模式时是否清空服务器配置</li>
+                         <li>验证模式指示器状态是否正确更新</li>
+                     </ul>
+                 </li>
+            </ol>
+        </div>
+    </div>
+    
+    <script>
+        function playVideo(videoId) {
+            const video = document.getElementById(videoId);
+            video.play().catch(e => {
+                updateStatus(`播放视频失败: ${e.message}`);
+            });
+            updateStatus(`开始播放 ${videoId}`);
+        }
+        
+        function pauseVideo(videoId) {
+            const video = document.getElementById(videoId);
+            video.pause();
+            updateStatus(`暂停播放 ${videoId}`);
+        }
+        
+        function simulateWatching() {
+            updateStatus('开始模拟长时间观看...');
+            const video = document.getElementById('video1');
+            
+            // 快速触发播放/暂停来模拟观看时间
+            let count = 0;
+            const interval = setInterval(() => {
+                if (count % 2 === 0) {
+                    video.play().catch(() => {});
+                } else {
+                    video.pause();
+                }
+                count++;
+                
+                if (count >= 10) {
+                    clearInterval(interval);
+                    updateStatus('模拟观看完成，请检查是否触发时间限制警告');
+                }
+            }, 1000);
+        }
+        
+        function checkExtensionStatus() {
+            // 检查是否有扩展注入的脚本
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                updateStatus('✅ Chrome扩展API可用');
+                
+                // 尝试发送消息给扩展
+                chrome.runtime.sendMessage({action: 'getConfig'}, (response) => {
+                    if (chrome.runtime.lastError) {
+                        updateStatus('❌ 扩展通信失败: ' + chrome.runtime.lastError.message);
+                    } else {
+                        updateStatus('✅ 扩展通信正常，当前配置: ' + JSON.stringify(response));
+                    }
+                });
+            } else {
+                updateStatus('❌ Chrome扩展API不可用，请确保已安装扩展');
+            }
+        }
+        
+        function updateStatus(message) {
+            const status = document.getElementById('status');
+            const timestamp = new Date().toLocaleTimeString();
+            status.innerHTML += `<br>[${timestamp}] ${message}`;
+            status.scrollTop = status.scrollHeight;
+        }
+        
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatus('测试页面已加载');
+            
+            // 监听视频事件
+            const videos = document.querySelectorAll('video');
+            videos.forEach((video, index) => {
+                video.addEventListener('play', () => {
+                    updateStatus(`视频${index + 1}开始播放`);
+                });
+                
+                video.addEventListener('pause', () => {
+                    updateStatus(`视频${index + 1}暂停播放`);
+                });
+                
+                video.addEventListener('ended', () => {
+                    updateStatus(`视频${index + 1}播放结束`);
+                });
+            });
+            
+            // 检查扩展状态
+            setTimeout(checkExtensionStatus, 1000);
+        });
+        
+        // 监听页面可见性变化
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                updateStatus('页面切换到后台');
+            } else {
+                updateStatus('页面切换到前台');
+            }
+        });
+    </script>
+</body>
+</html>

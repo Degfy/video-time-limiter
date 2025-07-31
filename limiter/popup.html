@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>视频时长限制器 - 设置</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        width: 400px;
+        min-height: 500px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #333;
+      }
+
+      .container {
+        background: white;
+        margin: 0;
+        min-height: 500px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 5px;
+      }
+
+      .header .subtitle {
+        font-size: 12px;
+        opacity: 0.9;
+      }
+
+      .content {
+        flex: 1;
+        padding: 20px;
+      }
+
+      .stats-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-left: 4px solid #667eea;
+      }
+
+      .stats-title {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 8px;
+      }
+
+      .stats-value {
+        font-size: 24px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+      }
+
+      .stats-limit {
+        font-size: 12px;
+        color: #999;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 6px;
+        background: #e9ecef;
+        border-radius: 3px;
+        margin-top: 8px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #28a745, #ffc107, #dc3545);
+        border-radius: 3px;
+        transition: width 0.3s ease;
+      }
+
+      .form-group {
+        margin-bottom: 16px;
+      }
+
+      .form-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: #555;
+        margin-bottom: 6px;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.3s ease;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+      }
+
+      .form-textarea {
+        resize: vertical;
+        min-height: 60px;
+      }
+
+      .input-group {
+        display: flex;
+        gap: 8px;
+      }
+
+      .input-group .form-input {
+        flex: 1;
+      }
+
+      .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary {
+        background: #667eea;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: #5a6fd8;
+      }
+
+      .btn-secondary {
+        background: #6c757d;
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background: #5a6268;
+      }
+
+      .btn-small {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+
+      .btn-block {
+        width: 100%;
+        margin-top: 10px;
+      }
+
+      .user-id-display {
+        background: #f8f9fa;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 12px;
+        word-break: break-all;
+        margin-bottom: 8px;
+      }
+
+      .status-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 6px;
+      }
+
+      .status-local {
+        background: #28a745;
+      }
+
+      .status-remote {
+        background: #007bff;
+      }
+
+      .status-error {
+        background: #dc3545;
+      }
+
+      .mode-indicator {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 15px;
+      }
+
+      .footer {
+        padding: 15px 20px;
+        background: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+        text-align: center;
+      }
+
+      .footer-text {
+        font-size: 11px;
+        color: #999;
+      }
+
+      .loading {
+        opacity: 0.6;
+        pointer-events: none;
+      }
+
+      .error-message {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        margin-top: 8px;
+      }
+
+      .success-message {
+        background: #d4edda;
+        color: #155724;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        margin-top: 8px;
+      }
+
+      .time-presets {
+        display: flex;
+        gap: 6px;
+        margin-top: 6px;
+        flex-wrap: wrap;
+      }
+
+      .time-preset {
+        padding: 4px 8px;
+        background: #e9ecef;
+        border: none;
+        border-radius: 4px;
+        font-size: 11px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+
+      .time-preset:hover {
+        background: #dee2e6;
+      }
+
+      .server-status {
+        margin-top: 8px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        display: none;
+      }
+
+      .server-status.online {
+        background: #d4edda;
+        color: #155724;
+        display: block;
+      }
+
+      .server-status.offline {
+        background: #f8d7da;
+        color: #721c24;
+        display: block;
+      }
+
+      .server-status.partial {
+        background: #fff3cd;
+        color: #856404;
+        display: block;
+      }
+
+      .server-status.checking {
+        background: #e2e3e5;
+        color: #383d41;
+        display: block;
+      }
+
+      /* 服务器状态显示样式 */
+      .server-status-display {
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        border: 1px solid #dee2e6;
+      }
+
+      .status-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .status-label {
+        font-weight: 500;
+        color: #495057;
+      }
+
+      .status-text {
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 12px;
+      }
+
+      .status-text.connected {
+        background-color: #d4edda;
+        color: #155724;
+      }
+
+      .status-text.disconnected {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+
+      .status-text.checking {
+        background-color: #fff3cd;
+        color: #856404;
+      }
+
+      .status-text.unknown {
+        background-color: #e2e3e5;
+        color: #383d41;
+      }
+
+      .mode-switch-container {
+        margin-bottom: 20px;
+      }
+
+      .mode-switch {
+        display: flex;
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 4px;
+        margin-bottom: 10px;
+      }
+
+      .mode-btn {
+        flex: 1;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: transparent;
+        color: #666;
+      }
+
+      .mode-btn.active {
+        background: #667eea;
+        color: white;
+        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+      }
+
+      .mode-btn:hover:not(.active) {
+        background: #e9ecef;
+        color: #333;
+      }
+
+      .remote-config {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        background: #fafbfc;
+      }
+
+      .server-demo {
+        margin-top: 4px;
+      }
+
+      .server-demo small {
+        color: #999;
+        font-size: 11px;
+      }
+
+      .mode-indicator {
+        font-size: 12px;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>视频时长限制器</h1>
+        <div class="subtitle">管理您的视频观看时间</div>
+      </div>
+
+      <div class="content">
+        <!-- 统计信息 -->
+        <div class="stats-card">
+          <div class="stats-title">今日观看时长</div>
+          <div class="stats-value" id="watchTimeDisplay">0分钟</div>
+          <div class="stats-limit">
+            限制: <span id="timeLimitDisplay">1分钟</span>
+          </div>
+          <div class="progress-bar">
+            <div
+              class="progress-fill"
+              id="progressFill"
+              style="width: 0%"
+            ></div>
+          </div>
+        </div>
+
+        <!-- 模式切换 -->
+        <div class="mode-switch-container">
+          <div class="mode-switch">
+            <button class="mode-btn" id="localModeBtn" data-mode="local">
+              本地模式
+            </button>
+            <button class="mode-btn" id="remoteModeBtn" data-mode="remote">
+              远程模式
+            </button>
+          </div>
+          <div class="mode-indicator">
+            <span class="status-indicator" id="statusIndicator"></span>
+            <span id="modeText">本地模式</span>
+          </div>
+        </div>
+
+        <!-- 时间限制设置 -->
+        <div class="form-group">
+          <label class="form-label" for="timeLimit">每日观看时间限制</label>
+          <input
+            type="text"
+            id="timeLimit"
+            class="form-input"
+            placeholder="例如: 30m, 1h30m, 01:30:00"
+          />
+          <div class="time-presets">
+            <button class="time-preset" data-time="5">5分钟</button>
+            <button class="time-preset" data-time="30">30分钟</button>
+            <button class="time-preset" data-time="60">1小时</button>
+            <button class="time-preset" data-time="120">2小时</button>
+            <button class="time-preset" data-time="180">3小时</button>
+          </div>
+        </div>
+
+        <!-- 远程模式配置 -->
+        <div id="remoteModeConfig" class="remote-config" style="display: none">
+          <!-- 服务器状态显示 -->
+          <div class="server-status-display">
+            <div class="status-header">
+              <span class="status-label">服务器状态:</span>
+              <span id="currentServerStatus" class="status-text">未连接</span>
+            </div>
+          </div>
+
+          <!-- 服务器设置 -->
+          <div class="form-group">
+            <label class="form-label" for="serverUrl">服务器接口地址</label>
+            <div class="input-group">
+              <input
+                type="url"
+                id="serverUrl"
+                class="form-input"
+                placeholder="http://localhost:8080"
+              />
+              <button class="btn btn-secondary btn-small" id="checkServerBtn">
+                检查
+              </button>
+            </div>
+            <div class="server-demo">
+              <small
+                >示例: http://localhost:8080 或 https://your-server.com</small
+              >
+            </div>
+            <div id="serverStatus" class="server-status"></div>
+          </div>
+
+          <!-- 用户ID -->
+          <div class="form-group">
+            <label class="form-label">用户ID</label>
+            <div class="user-id-display" id="userIdDisplay">加载中...</div>
+            <div class="input-group">
+              <input
+                type="text"
+                id="customUserId"
+                class="form-input"
+                placeholder="输入自定义用户ID（可选）"
+                style="display: none"
+              />
+            </div>
+            <div class="input-group">
+              <button class="btn btn-secondary btn-small" id="copyUserIdBtn">
+                复制ID
+              </button>
+              <button class="btn btn-secondary btn-small" id="editUserIdBtn">
+                编辑
+              </button>
+              <button
+                class="btn btn-secondary btn-small"
+                id="regenerateUserIdBtn"
+              >
+                重新生成
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 自定义提示内容 -->
+        <div class="form-group">
+          <label class="form-label" for="customMessage">自定义提示内容</label>
+          <textarea
+            id="customMessage"
+            class="form-input form-textarea"
+            placeholder="当超过时间限制时显示的提示信息"
+          ></textarea>
+        </div>
+
+        <!-- 保存按钮 -->
+        <button class="btn btn-primary btn-block" id="saveBtn">保存设置</button>
+
+        <!-- 消息显示区域 -->
+        <div id="messageArea"></div>
+      </div>
+
+      <div class="footer">
+        <div class="footer-text">视频时长限制器 v1.0</div>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

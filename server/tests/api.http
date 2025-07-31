@@ -1,0 +1,23 @@
+@host = http://localhost:8080
+
+### GET request to example server
+GET {{host}}/api/v1/videos/99911sssw
+
+###
+POST {{host}}/api/v1/videos/99911sssw
+Content-Type: application/json
+
+{
+  "url": "New video",
+  "watchTime": 100,
+  "at": "2025-07-31T06:52:01.112592+08:00"
+}
+
+###
+PUT {{host}}/api/v1/videos/99911sssw
+Content-Type: application/json
+
+{
+  "limitTime": 80000,
+  "customMessage": "您今天的视频观看时间已达到限制！请适当休息。"
+}

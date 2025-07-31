@@ -135,6 +135,10 @@ go run cmd/server/main.go
 
 - **本地模式**: 不设置服务器地址，数据存储在浏览器本地
 - **远程模式**: 设置服务器地址，数据同步到远程服务器
+  提供两个可以使用的服务器地址，使用 [claw.cloud](https://console.run.claw.cloud/signin?link=WP802OD9HDPN) 部署的：
+  - https://epovxlsatvbe.ap-northeast-1.clawcloudrun.com
+  - https://ymybfpjdomsf.ap-southeast-1.clawcloudrun.com
+
 
 ### 3. 监控机制
 

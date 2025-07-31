@@ -7,7 +7,8 @@ const CONFIG_KEYS = {
   TIME_LIMIT: 'timeLimit',
   CUSTOM_MESSAGE: 'customMessage',
   WATCH_TIME: 'watchTime',
-  LAST_DATE: 'lastDate'
+  LAST_DATE: 'lastDate',
+  LANGUAGE: 'language'
 };
 
 // 累积上报相关状态
@@ -22,8 +23,29 @@ const DEFAULT_CONFIG = {
   timeLimit: 60000, // 60秒，单位毫秒
   customMessage: '您今日的视频观看时间已超过限制！请适当休息。',
   watchTime: 0,
-  lastDate: new Date().toDateString()
+  lastDate: new Date().toDateString(),
+  language: 'zh-CN'
 };
+
+// 检测浏览器语言
+function detectBrowserLanguage() {
+  const browserLang = chrome.i18n.getUILanguage() || 'zh-CN';
+  
+  // 检查是否支持浏览器语言
+  if (['zh-CN', 'en-US'].includes(browserLang)) {
+    return browserLang;
+  }
+  
+  // 检查语言代码的前缀（如 en-GB -> en-US）
+  const langPrefix = browserLang.split('-')[0];
+  if (langPrefix === 'en') {
+    return 'en-US';
+  } else if (langPrefix === 'zh') {
+    return 'zh-CN';
+  }
+  
+  return 'zh-CN';
+}
 
 // 初始化
 chrome.runtime.onInstalled.addListener(async () => {
@@ -85,6 +107,9 @@ async function initializeConfig() {
   }
   if (!result[CONFIG_KEYS.USER_ID]) {
     updates[CONFIG_KEYS.USER_ID] = generateUserId();
+  }
+  if (!result[CONFIG_KEYS.LANGUAGE]) {
+    updates[CONFIG_KEYS.LANGUAGE] = detectBrowserLanguage();
   }
 
   if (Object.keys(updates).length > 0) {

@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "Video Time Limiter",
+    "description": "Extension name"
+  },
+  "extensionDescription": {
+    "message": "Track video watching time and show warnings when limit exceeded",
+    "description": "Extension description"
+  }
+}

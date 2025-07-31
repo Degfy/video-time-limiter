@@ -1,5 +1,6 @@
 // Content Script - 内容脚本
 // 在所有网页中运行，检测视频播放并统计时长
+// Content Script - runs on all web pages, detects video playback and tracks duration
 
 (function () {
   'use strict';
@@ -8,7 +9,8 @@
   let config = {
     timeLimit: 60000,
     customMessage: '您今日的视频观看时间已超过限制！请适当休息。',
-    watchTime: 0
+    watchTime: 0,
+    language: 'zh-CN'
   };
 
   // 状态管理
@@ -24,7 +26,7 @@
   init();
 
   async function init() {
-    console.log('视频时长限制器 - 内容脚本已加载');
+    console.log('视频时长限制器 - 内容脚本已加载 / Video Time Limiter - Content script loaded');
 
     // 获取初始配置
     await loadInitialConfig();
@@ -34,6 +36,28 @@
 
     // 监听来自background的消息
     chrome.runtime.onMessage.addListener(handleMessage);
+  }
+
+  // 获取本地化消息
+  function getLocalizedMessage(key, defaultMessage) {
+    const messages = {
+      'zh-CN': {
+        warningTitle: '时间限制提醒',
+        defaultWarning: '您今日的视频观看时间已超过限制！请适当休息。',
+        closeButton: '我知道了',
+        continueWatching: '继续观看'
+      },
+      'en-US': {
+        warningTitle: 'Time Limit Reminder',
+        defaultWarning: 'Your daily video watching time has exceeded the limit! Please take a break.',
+        closeButton: 'I Understand',
+        continueWatching: 'Continue Watching'
+      }
+    };
+    
+    const currentLang = config.language || 'zh-CN';
+    const langMessages = messages[currentLang] || messages['zh-CN'];
+    return langMessages[key] || defaultMessage;
   }
 
   // 加载配置（仅在初始化时使用）
@@ -74,7 +98,10 @@
     if (changes.watchTime && changes.watchTime.newValue !== undefined) {
       config.watchTime = changes.watchTime.newValue;
     }
-    console.log('配置已更新:', config);
+    if (changes.language && changes.language.newValue !== undefined) {
+      config.language = changes.language.newValue;
+    }
+    console.log('配置已更新 / Config updated:', config);
   }
 
   // 开始视频监听
@@ -297,7 +324,7 @@
             margin: 0 0 20px 0;
             font-size: 24px;
             font-weight: 600;
-          ">时间限制提醒</h2>
+          ">${getLocalizedMessage('warningTitle', '时间限制提醒')}</h2>
           <p style="
             color: #333;
             margin: 0 0 30px 0;
@@ -322,7 +349,7 @@
             font-size: 16px;
             cursor: pointer;
             transition: background 0.3s;
-          ">我知道了</button>
+          ">${getLocalizedMessage('closeButton', '我知道了')}</button>
         </div>
       </div>
     `;

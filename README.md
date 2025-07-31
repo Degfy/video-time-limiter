@@ -253,8 +253,8 @@ go run cmd/server/main.go
 
 ## 📞 联系方式
 
-- 项目维护者: [Your Name]
-- 邮箱: [your.email@example.com]
+- 项目维护者: [degfy](https://github.com/degfy)
+- 邮箱: [degfy@outlook.com](mailto:degfy@outlook.com)
 
 ---
 

@@ -1,4 +1,5 @@
 // Popup 脚本 - 设置界面逻辑
+// Popup Script - Settings Interface Logic
 
 (function () {
   'use strict';
@@ -25,7 +26,8 @@
     checkServerBtn: document.getElementById('checkServerBtn'),
     serverStatus: document.getElementById('serverStatus'),
     currentServerStatus: document.getElementById('currentServerStatus'),
-    messageArea: document.getElementById('messageArea')
+    messageArea: document.getElementById('messageArea'),
+    languageSelect: document.getElementById('languageSelect')
   };
 
   // 当前配置
@@ -38,7 +40,10 @@
   document.addEventListener('DOMContentLoaded', init);
 
   async function init() {
-    console.log('设置界面已加载');
+    console.log('设置界面已加载 / Settings interface loaded');
+
+    // 初始化国际化
+    await initializeI18n();
 
     // 监听配置变化
     listenForConfigUpdates();
@@ -48,19 +53,77 @@
 
     // 绑定事件
     bindEvents();
+  }
 
-    // 定时更新显示
-    setInterval(updateDisplay, 1000);
+  // 初始化国际化
+  async function initializeI18n() {
+    try {
+      // 初始化语言设置
+      await I18n.initLanguage();
+      
+      // 设置语言选择器的值
+      elements.languageSelect.value = I18n.getCurrentLanguage();
+      
+      // 更新页面文本
+      updatePageTexts();
+      
+      // 绑定语言切换事件
+      elements.languageSelect.addEventListener('change', handleLanguageChange);
+    } catch (error) {
+      console.error('Failed to initialize i18n:', error);
+    }
+  }
+
+  // 处理语言切换
+  async function handleLanguageChange(event) {
+    const newLanguage = event.target.value;
+    try {
+      await I18n.setLanguage(newLanguage);
+      updatePageTexts();
+      updateDisplay(); // 重新格式化时间显示
+      showMessage(I18n.getMessage('settingsSaved'), 'success');
+    } catch (error) {
+      console.error('Failed to change language:', error);
+      showMessage(I18n.getMessage('settingsSaveError'), 'error');
+    }
+  }
+
+  // 更新页面文本
+  function updatePageTexts() {
+    // 更新所有带有 data-i18n 属性的元素
+    document.querySelectorAll('[data-i18n]').forEach(element => {
+      const key = element.getAttribute('data-i18n');
+      const text = I18n.getMessage(key);
+      
+      if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+        // 对于输入元素，更新 placeholder
+        if (element.hasAttribute('data-i18n-placeholder')) {
+          const placeholderKey = element.getAttribute('data-i18n-placeholder');
+          element.placeholder = I18n.getMessage(placeholderKey);
+        }
+      } else {
+        element.textContent = text;
+      }
+    });
+
+    // 更新页面标题
+    document.title = I18n.getMessage('extensionTitle');
+    
+    // 更新HTML lang属性
+    document.documentElement.lang = I18n.getCurrentLanguage();
   }
 
   // 监听配置更新
   function listenForConfigUpdates() {
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      if (message.type === 'configUpdated') {
-        currentConfig.watchTime = message.config.watchTime;
-        updateUI();
-      }
-    });
+    // 检查是否在Chrome扩展环境中
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+      chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.type === 'configUpdated') {
+          currentConfig.watchTime = message.config.watchTime;
+          updateUI();
+        }
+      });
+    }
   }
 
   // 请求初始配置
@@ -68,19 +131,32 @@
     try {
       showLoading(true);
 
-      const response = await chrome.runtime.sendMessage({ action: 'getConfig' });
+      // 检查是否在Chrome扩展环境中
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+        const response = await chrome.runtime.sendMessage({ action: 'getConfig' });
 
-      console.log('获取初始配置成功:', response);
+        console.log('获取初始配置成功:', response);
 
-      if (response && !response.error) {
-        currentConfig = response;
-        updateUI();
+        if (response && !response.error) {
+          currentConfig = response;
+          updateUI();
+        } else {
+          showMessage(I18n.getMessage('configLoadError') + ': ' + (response?.error || 'Unknown error'), 'error');
+        }
       } else {
-        showMessage('获取配置失败: ' + (response?.error || '未知错误'), 'error');
+        // 非扩展环境，使用模拟数据
+        currentConfig = {
+          timeLimit: 60000,
+          customMessage: I18n.getMessage('defaultWarningMessage'),
+          watchTime: 25000, // 模拟已观看25秒
+          serverUrl: '',
+          userId: 'demo_user_123'
+        };
+        updateUI();
       }
     } catch (error) {
       console.error('获取配置失败:', error);
-      showMessage('获取配置失败: ' + error.message, 'error');
+      showMessage(I18n.getMessage('configLoadError') + ': ' + error.message, 'error');
     } finally {
       showLoading(false);
     }
@@ -114,8 +190,8 @@
     const timeLimit = currentConfig.timeLimit || 60000;
 
     // 更新时间显示
-    elements.watchTimeDisplay.textContent = formatTime(watchTime);
-    elements.timeLimitDisplay.textContent = formatTime(timeLimit);
+    elements.watchTimeDisplay.textContent = I18n.formatTime(watchTime);
+    elements.timeLimitDisplay.textContent = I18n.formatTime(timeLimit);
 
     // 更新进度条
     const progress = Math.min((watchTime / timeLimit) * 100, 100);
@@ -139,12 +215,12 @@
 
     // 更新模式指示器
     if (currentMode === 'remote') {
-      elements.statusIndicator.className = 'status-indicator status-remote';
-      elements.modeText.textContent = '远程模式';
+      elements.statusIndicator.className = 'status-indicator';
+      elements.modeText.textContent = I18n.getMessage('remoteMode');
       elements.remoteModeConfig.style.display = 'block';
     } else {
-      elements.statusIndicator.className = 'status-indicator status-local';
-      elements.modeText.textContent = '本地模式';
+      elements.statusIndicator.className = 'status-indicator';
+      elements.modeText.textContent = I18n.getMessage('localMode');
       elements.remoteModeConfig.style.display = 'none';
     }
 
@@ -152,7 +228,7 @@
     if (currentMode === 'remote' && currentConfig.serverUrl) {
       checkServerStatusSilently();
     } else {
-      updateServerStatusDisplay('未连接', 'unknown');
+      updateServerStatusDisplay(I18n.getMessage('serverDisconnected'), 'unknown');
     }
   }
 
@@ -164,20 +240,20 @@
     updateModeDisplay();
 
     // 如果切换到本地模式，清空服务器配置
-    if (mode === 'local') {
-      elements.serverUrl.value = '';
-      // 隐藏服务器状态
-      elements.serverStatus.style.display = 'none';
-      currentConfig.serverUrl = '';
-      showMessage('已切换到本地模式', 'success');
-    } else {
-      // 切换到远程模式，给出示例服务器地址
-      if (!elements.serverUrl.value.trim()) {
-        elements.serverUrl.value = 'http://localhost:8080';
-        currentConfig.serverUrl = 'http://localhost:8080';
+      if (mode === 'local') {
+        elements.serverUrl.value = '';
+        // 隐藏服务器状态
+        elements.serverStatus.style.display = 'none';
+        currentConfig.serverUrl = '';
+        showMessage(I18n.getMessage('settingsSaved'), 'success');
+      } else {
+        // 切换到远程模式，给出示例服务器地址
+        if (!elements.serverUrl.value.trim()) {
+          elements.serverUrl.value = 'http://localhost:8080';
+          currentConfig.serverUrl = 'http://localhost:8080';
+        }
+        showMessage(I18n.getMessage('settingsSaved'), 'success');
       }
-      showMessage('已切换到远程模式，请配置服务器地址', 'success');
-    }
   }
 
   // 绑定事件
@@ -255,7 +331,7 @@
       // 验证输入
       const timeLimit = parseTimeInput(elements.timeLimit.value.trim());
       if (timeLimit === 0) {
-        showMessage('请输入有效的时间限制', 'error');
+        showMessage(I18n.getMessage('invalidTimeLimit'), 'error');
         return;
       }
 
@@ -272,11 +348,11 @@
       if (currentMode === 'remote') {
         const serverUrl = elements.serverUrl.value.trim();
         if (!serverUrl) {
-          showMessage('远程模式下请输入服务器地址', 'error');
+          showMessage(I18n.getMessage('serverUrlRequired'), 'error');
           return;
         }
         if (!isValidUrl(serverUrl)) {
-          showMessage('请输入有效的服务器地址', 'error');
+          showMessage(I18n.getMessage('invalidServerUrl'), 'error');
           return;
         }
         config.serverUrl = serverUrl;
@@ -295,14 +371,14 @@
       });
 
       if (response && response.success) {
-        showMessage('设置已保存', 'success');
+        showMessage(I18n.getMessage('settingsSaved'), 'success');
         // 配置会通过监听器自动更新，无需手动重新加载
       } else {
-        showMessage('保存失败: ' + (response?.error || '未知错误'), 'error');
+        showMessage(I18n.getMessage('settingsSaveError') + ': ' + (response?.error || 'Unknown error'), 'error');
       }
     } catch (error) {
       console.error('保存配置失败:', error);
-      showMessage('保存失败: ' + error.message, 'error');
+      showMessage(I18n.getMessage('settingsSaveError') + ': ' + error.message, 'error');
     } finally {
       showLoading(false);
     }
@@ -312,7 +388,7 @@
   async function copyUserId() {
     try {
       await navigator.clipboard.writeText(currentConfig.userId);
-      showMessage('用户ID已复制到剪贴板', 'success');
+      showMessage(I18n.getMessage('userIdCopied'), 'success');
     } catch (error) {
       // 降级方案
       const textArea = document.createElement('textarea');
@@ -321,13 +397,13 @@
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      showMessage('用户ID已复制到剪贴板', 'success');
+      showMessage(I18n.getMessage('userIdCopied'), 'success');
     }
   }
 
   // 重新生成用户ID
   async function regenerateUserId() {
-    if (!confirm('确定要重新生成用户ID吗？这将清空当前的观看记录。')) {
+    if (!confirm(I18n.getMessage('confirmRegenerateUserId'))) {
       return;
     }
 
@@ -342,14 +418,14 @@
       });
 
       if (response && response.success) {
-        showMessage('用户ID已重新生成', 'success');
+        showMessage(I18n.getMessage('userIdRegenerated'), 'success');
         // 配置会通过监听器自动更新，无需手动重新加载
       } else {
-        showMessage('重新生成失败: ' + (response?.error || '未知错误'), 'error');
+        showMessage(I18n.getMessage('userIdRegenerateError') + ': ' + (response?.error || 'Unknown error'), 'error');
       }
     } catch (error) {
       console.error('重新生成用户ID失败:', error);
-      showMessage('重新生成失败: ' + error.message, 'error');
+      showMessage(I18n.getMessage('settingsSaveError') + ': ' + error.message, 'error');
     } finally {
       showLoading(false);
     }
@@ -362,13 +438,13 @@
     if (isEditing) {
       // 取消编辑
       elements.customUserId.style.display = 'none';
-      elements.editUserIdBtn.textContent = '编辑';
+      elements.editUserIdBtn.textContent = I18n.getMessage('edit');
       elements.customUserId.value = '';
     } else {
       // 开始编辑
       elements.customUserId.style.display = 'block';
       elements.customUserId.value = currentConfig.userId || '';
-      elements.editUserIdBtn.textContent = '取消';
+      elements.editUserIdBtn.textContent = I18n.getMessage('cancel');
       elements.customUserId.focus();
     }
   }
@@ -378,7 +454,7 @@
     const customId = elements.customUserId.value.trim();
 
     if (!customId) {
-      showMessage('用户ID不能为空', 'error');
+      showMessage(I18n.getMessage('userIdRequired'), 'error');
       return;
     }
 
@@ -397,15 +473,15 @@
       });
 
       if (response && response.success) {
-        showMessage('用户ID已更新', 'success');
+        showMessage(I18n.getMessage('userIdUpdated'), 'success');
         // 配置会通过监听器自动更新，无需手动重新加载
         toggleUserIdEdit();
       } else {
-        showMessage('更新失败: ' + (response?.error || '未知错误'), 'error');
+        showMessage(I18n.getMessage('userIdUpdateError') + ': ' + (response?.error || 'Unknown error'), 'error');
       }
     } catch (error) {
       console.error('更新用户ID失败:', error);
-      showMessage('更新失败: ' + error.message, 'error');
+      showMessage(I18n.getMessage('userIdUpdateError') + ': ' + error.message, 'error');
     } finally {
       showLoading(false);
     }
@@ -420,11 +496,11 @@
   // 静默检查服务器状态
   async function checkServerStatusSilently() {
     if (!currentConfig.serverUrl) {
-      updateServerStatusDisplay('未配置', 'unknown');
+      updateServerStatusDisplay(I18n.getMessage('serverNotConfigured'), 'unknown');
       return;
     }
 
-    updateServerStatusDisplay('检查中...', 'checking');
+    updateServerStatusDisplay(I18n.getMessage('serverChecking'), 'checking');
 
     try {
       const response = await chrome.runtime.sendMessage({
@@ -435,19 +511,19 @@
       if (response && !response.error) {
         switch (response.status) {
           case 'online':
-            updateServerStatusDisplay('已连接', 'connected');
+            updateServerStatusDisplay(I18n.getMessage('serverConnected'), 'connected');
             break;
           case 'partial':
-            updateServerStatusDisplay('连接异常', 'disconnected');
+            updateServerStatusDisplay(I18n.getMessage('serverPartial'), 'disconnected');
             break;
           case 'offline':
-            updateServerStatusDisplay('连接失败', 'disconnected');
+            updateServerStatusDisplay(I18n.getMessage('serverDisconnected'), 'disconnected');
             break;
           default:
-            updateServerStatusDisplay('未知状态', 'unknown');
+            updateServerStatusDisplay(I18n.getMessage('serverUnknown'), 'unknown');
         }
       } else {
-        updateServerStatusDisplay('连接失败', 'disconnected');
+        updateServerStatusDisplay(I18n.getMessage('serverDisconnected'), 'disconnected');
       }
     } catch (error) {
       updateServerStatusDisplay('连接失败', 'disconnected');
@@ -459,15 +535,15 @@
     const serverUrl = elements.serverUrl.value.trim();
 
     if (!serverUrl) {
-      showMessage('请先输入服务器地址', 'error');
+      showMessage(I18n.getMessage('serverUrlRequired'), 'error');
       return;
     }
 
     try {
       // 显示检查中状态
       elements.serverStatus.className = 'server-status checking';
-      elements.serverStatus.textContent = '正在检查服务器状态...';
-      elements.checkServerBtn.textContent = '检查中...';
+      elements.serverStatus.textContent = I18n.getMessage('checkingServerStatus');
+      elements.checkServerBtn.textContent = I18n.getMessage('checking');
       elements.checkServerBtn.disabled = true;
 
       const response = await chrome.runtime.sendMessage({
@@ -483,19 +559,19 @@
         switch (response.status) {
           case 'online':
             statusText = '✅ ' + response.message;
-            updateServerStatusDisplay('已连接', 'connected');
+            updateServerStatusDisplay(I18n.getMessage('serverConnected'), 'connected');
             break;
           case 'partial':
             statusText = '⚠️ ' + response.message;
-            updateServerStatusDisplay('连接异常', 'disconnected');
+            updateServerStatusDisplay(I18n.getMessage('serverPartial'), 'disconnected');
             break;
           case 'offline':
             statusText = '❌ ' + response.message;
-            updateServerStatusDisplay('连接失败', 'disconnected');
+            updateServerStatusDisplay(I18n.getMessage('serverDisconnected'), 'disconnected');
             break;
           default:
             statusText = '❓ ' + response.message;
-            updateServerStatusDisplay('未知状态', 'unknown');
+            updateServerStatusDisplay(I18n.getMessage('serverUnknown'), 'unknown');
         }
 
         elements.serverStatus.textContent = statusText;
@@ -508,15 +584,15 @@
       } else {
         elements.serverStatus.className = 'server-status offline';
         elements.serverStatus.textContent = '❌ ' + (response?.error || '检查失败');
-        updateServerStatusDisplay('连接失败', 'disconnected');
+        updateServerStatusDisplay(I18n.getMessage('serverDisconnected'), 'disconnected');
       }
     } catch (error) {
       console.error('检查服务器状态失败:', error);
       elements.serverStatus.className = 'server-status offline';
-      elements.serverStatus.textContent = '❌ 检查失败: ' + error.message;
-      updateServerStatusDisplay('连接失败', 'disconnected');
+      elements.serverStatus.textContent = '❌ ' + I18n.getMessage('checkFailed') + ': ' + error.message;
+      updateServerStatusDisplay(I18n.getMessage('serverDisconnected'), 'disconnected');
     } finally {
-      elements.checkServerBtn.textContent = '检查';
+      elements.checkServerBtn.textContent = I18n.getMessage('checkServer');
       elements.checkServerBtn.disabled = false;
     }
   }
@@ -624,10 +700,10 @@
   function showLoading(loading) {
     if (loading) {
       document.body.classList.add('loading');
-      elements.saveBtn.textContent = '保存中...';
+      elements.saveBtn.textContent = I18n.getMessage('saving');
     } else {
       document.body.classList.remove('loading');
-      elements.saveBtn.textContent = '保存设置';
+      elements.saveBtn.textContent = I18n.getMessage('saveSettings');
     }
   }
 

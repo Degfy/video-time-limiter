@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "视频时长限制器",
+    "description": "Extension name"
+  },
+  "extensionDescription": {
+    "message": "记录视频播放时长，超过设置值时弹出警告",
+    "description": "Extension description"
+  }
+}
